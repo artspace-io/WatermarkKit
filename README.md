@@ -172,6 +172,7 @@ WatermarkKit.cleanupTemporaryFiles()
 | 后台「续跑」实为重跑 | `AVAssetExportSession` 没有暂停恢复能力，长视频切后台回来会看到进度回退 |
 | HDR 降级 SDR | 经 animationTool 合成的 HDR 素材会被 tone-map，可通过 `hdrPolicy` 改为跳过水印 |
 | 不支持精确码率 | 导出走预设驱动，精确码率需要 `AVAssetWriter` 通道 |
+| `.medium` / `.low` 会缩分辨率 | 这两个档位的质量与输出尺寸由系统决定，实测竖屏 1320×2868 走 `MediumQuality` 被压到 220×480；`.highest` 严格等于源分辨率，编码器不可用时报错而非静默缩小 |
 | Live Photo | 降级为静态图输出 |
 
 详见 [需求文档](doc/水印工具类需求文档.md) 的「非目标」章节。

@@ -461,8 +461,9 @@ final class ExportPresetTests: XCTestCase {
         XCTAssertEqual(candidates.first, AVAssetExportPresetHEVCHighestQuality)
     }
 
-    /// 低码率素材若按最高预设导出，文件会反而变大。
-    func testLowBitrateSourceDowngrades() {
+    /// 低码率素材若按最高预设导出，文件会反而变大 —— 但 `.highest` 不降档，
+    /// 因为降档到 `MediumQuality` 会被系统压缩输出分辨率，保分辨率优先。
+    func testLowBitrateSourceKeepsHighestToPreserveResolution() {
         let candidates = VideoExportPresetResolver.candidates(
             for: .highest,
             renderSize: size1080p,
@@ -470,7 +471,8 @@ final class ExportPresetTests: XCTestCase {
             sourceDataRate: 800_000,
             avoidsFileSizeInflation: true
         )
-        XCTAssertEqual(candidates.first, AVAssetExportPresetMediumQuality)
+        XCTAssertEqual(candidates.first, AVAssetExportPresetHEVCHighestQuality)
+        XCTAssertFalse(candidates.contains(AVAssetExportPresetMediumQuality))
     }
 
     func testDowngradeDisabled() {

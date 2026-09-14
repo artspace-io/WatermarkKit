@@ -4,6 +4,7 @@
 //
 
 import AVFoundation
+import OSLog
 import UIKit
 
 /// 视频导出执行器。
@@ -12,6 +13,11 @@ import UIKit
 /// 这套 API 自 iOS 18 起标记为弃用，但最低支持版本是 iOS 16，新 API 尚不可用，
 /// 因此新 SDK 下编译会出现弃用告警。待最低版本提升到 18 后，只需替换本文件即可完成迁移。
 final class VideoExporter: @unchecked Sendable {
+
+    private static let logger = Logger(
+        subsystem: "com.watermarkkit",
+        category: "VideoExport"
+    )
 
     struct Output {
         let presetName: String
@@ -48,6 +54,11 @@ final class VideoExporter: @unchecked Sendable {
                     outputURL: outputURL,
                     progress: progress
                 )
+                try await verifyOutputSize(
+                    for: outputURL,
+                    expectedSize: plan.renderSize,
+                    presetName: presetName
+                )
                 return Output(presetName: presetName, restartCount: restartCount)
             } catch WatermarkError.interrupted {
                 guard config.video.backgroundPolicy == .suspendAndResume,
@@ -66,6 +77,7 @@ final class VideoExporter: @unchecked Sendable {
             } catch {
                 // 编码器缺失这类失败要跑到真正建立编码会话时才暴露，事前的兼容性查询挡不住，
                 // 所以失败一次就降到下一个候选预设再试，全部试完才算真失败。
+                Self.logger.error("预设 \(presetName) 导出失败: \(error.localizedDescription)，尝试下一个候选")
                 try? FileManager.default.removeItem(at: outputURL)
                 presetIndex += 1
                 guard presetIndex < candidates.count else { throw error }
@@ -86,11 +98,15 @@ final class VideoExporter: @unchecked Sendable {
             sourceDataRate: plan.sourceDataRate,
             avoidsFileSizeInflation: config.video.avoidsFileSizeInflation
         )
-        return await VideoExportPresetResolver.compatiblePresets(
+        let compatible = await VideoExportPresetResolver.compatiblePresets(
             among: candidates,
             asset: plan.composition,
             fileType: config.video.fileType
         )
+        Self.logger.info(
+            "导出候选预设: \(candidates), renderSize: \(Int(plan.renderSize.width))×\(Int(plan.renderSize.height)), 兼容结果: \(compatible)"
+        )
+        return compatible
     }
 
     // MARK: - 单次导出
@@ -190,6 +206,40 @@ final class VideoExporter: @unchecked Sendable {
         // 留 20% 余量，编码过程中的临时占用通常高于最终文件大小
         if available < Int64(Double(estimated) * 1.2) {
             throw WatermarkError.diskFull
+        }
+    }
+
+    /// 导出后校验输出视频尺寸是否符合预期，拦截「预设偷缩分辨率」等静默异常。
+    ///
+    /// `AVAssetExportSession` 的 `MediumQuality` / `LowQuality` 等预设会把输出
+    /// 分辨率压到更小（竖屏 1320×2868 实测被压到 220×480），
+    /// 而 `HighestQuality` 系列严格等于 `renderSize`。此校验在导出成功后比对，
+    /// 不符时记录错误日志，供排查预设行为。
+    private func verifyOutputSize(
+        for outputURL: URL,
+        expectedSize: CGSize,
+        presetName: String
+    ) async {
+        let asset = AVURLAsset(url: outputURL)
+        guard let track = try? await asset.loadTracks(withMediaType: .video).first else {
+            Self.logger.warning("无法读取输出文件视频轨道以校验尺寸: \(outputURL.path)")
+            return
+        }
+        do {
+            let naturalSize = try await track.load(.naturalSize)
+            let matches = abs(naturalSize.width - expectedSize.width) < 2
+                && abs(naturalSize.height - expectedSize.height) < 2
+            if matches {
+                Self.logger.info(
+                    "输出尺寸校验通过: \(Int(naturalSize.width))×\(Int(naturalSize.height))（预设 \(presetName)）"
+                )
+            } else {
+                Self.logger.error(
+                    "输出尺寸与预期不符: 实际 \(Int(naturalSize.width))×\(Int(naturalSize.height))，\" + \"预期 \(Int(expectedSize.width))×\(Int(expectedSize.height))（预设 \(presetName)）"
+                )
+            }
+        } catch {
+            Self.logger.warning("读取输出轨道尺寸失败: \(error.localizedDescription)")
         }
     }
 

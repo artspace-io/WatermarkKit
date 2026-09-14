@@ -81,12 +81,25 @@ public struct OutputConfig: Sendable, Equatable {
 
 /// 视频导出质量档位。
 ///
-/// 不提供 `.custom(bitrate:)` —— `AVAssetExportSession` 没有任何设置码率的 API，
-/// 精确码率控制必须改走 `AVAssetWriter`，属后续版本范围。
+/// 各档位在分辨率上行为差异：
+/// - `.highest`：输出严格等于 `videoComposition.renderSize`，即原视频分辨率（偶数对齐后）
+/// - `.medium` / `.low`：由系统决定质量与尺寸，**实际输出分辨率可能被压缩**
+///
+/// 追求「导出原分辨率」只应使用 `.highest`。精确码率控制必须改走 `AVAssetWriter`。
 public enum VideoQualityPreset: Sendable, Equatable {
     case highest
     case medium
     case low
+}
+
+extension VideoQualityPreset: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .highest:  return "最高"
+        case .medium:   return "中等"
+        case .low:      return "低"
+        }
+    }
 }
 
 /// HDR 素材处理策略。
@@ -119,6 +132,10 @@ public struct VideoOutputConfig: Sendable, Equatable {
     ///
     /// 这是近似控制而非精确上限 —— `AVAssetExportSession` 无法指定码率，
     /// 只能通过选择更低的预设间接影响输出。
+    ///
+    /// 注意：`.highest` 档不会因防膨胀而降档，因为降档到 `.medium` 会让系统压缩
+    /// 输出分辨率（`MediumQuality` 实测会把竖屏素材缩到 480p 等小尺寸），
+    /// 违背「保分辨率」的优先承诺。需要压缩尺寸时请显式改用 `.medium` / `.low`。
     public var avoidsFileSizeInflation: Bool
 
     public init(
