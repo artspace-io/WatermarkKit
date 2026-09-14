@@ -1,0 +1,6 @@
+framework module Pods_WatermarkKit_Example {
+  umbrella header "Pods-WatermarkKit_Example-umbrella.h"
+
+  export *
+  module * { export * }
+}

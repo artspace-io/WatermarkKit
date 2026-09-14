@@ -1,16 +1,23 @@
 use_frameworks!
 
-platform :ios, '10.0'
+platform :ios, '16.0'
 
 target 'WatermarkKit_Example' do
   pod 'WatermarkKit', :path => '../'
+  pod 'WatermarkKit/Photos', :path => '../'
 
   target 'WatermarkKit_Tests' do
     inherit! :search_paths
+  end
+end
 
-    pod 'Quick', '~> 2.2.0'
-    pod 'Nimble', '~> 10.0.0'
-    pod 'FBSnapshotTestCase' , '~> 2.1.4'
-    pod 'Nimble-Snapshots' , '~> 9.4.0'
+# 测试使用 XCTest，不再依赖 Quick / Nimble / FBSnapshotTestCase：
+# 这些库的锁定版本停留在 iOS 10 时代，与 iOS 16 的并发测试写法不兼容。
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+    end
   end
 end

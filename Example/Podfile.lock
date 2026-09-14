@@ -1,0 +1,21 @@
+PODS:
+  - WatermarkKit (0.1.0):
+    - WatermarkKit/Core (= 0.1.0)
+  - WatermarkKit/Core (0.1.0)
+  - WatermarkKit/Photos (0.1.0):
+    - WatermarkKit/Core
+
+DEPENDENCIES:
+  - WatermarkKit (from `../`)
+  - WatermarkKit/Photos (from `../`)
+
+EXTERNAL SOURCES:
+  WatermarkKit:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  WatermarkKit: 979d342087ae728c96d851b2b395a88235a41ed8
+
+PODFILE CHECKSUM: 190b936f9c9d7134545fe59ca6bbf512ff4c7cc7
+
+COCOAPODS: 1.17.0

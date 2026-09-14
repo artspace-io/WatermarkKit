@@ -1,0 +1,50 @@
+{
+  "name": "WatermarkKit",
+  "version": "0.1.0",
+  "summary": "图片与视频水印工具库，支持文字/图片水印、九宫格布局、平铺与批量处理。",
+  "description": "WatermarkKit 是一个同时覆盖「相册图片/视频加水印」与「AI 生成内容自动加水印」两类场景的\nSwift 工具库。\n\n- 文字与图片水印，支持描边、阴影、旋转、平铺与多水印叠加\n- 几何量全部归一化，同一份配置在任意分辨率下视觉一致\n- 视频走 AVMutableVideoComposition + CALayer 系统级合成，长视频无内存爆炸风险\n- 正确处理 preferredTransform，横竖屏与前置摄像头镜像素材方位无误\n- 图片输出经 CGImageDestination 保留 EXIF 元数据，GPS 单独开关\n- 核心 async/await，附带 Combine 与 completion handler 便利层",
+  "homepage": "https://github.com/artspace-io/WatermarkKit",
+  "license": {
+    "type": "MIT",
+    "file": "LICENSE"
+  },
+  "authors": {
+    "Robin": "enamourchen@outlook.com"
+  },
+  "source": {
+    "git": "https://github.com/artspace-io/WatermarkKit.git",
+    "tag": "0.1.0"
+  },
+  "platforms": {
+    "ios": "16.0"
+  },
+  "swift_versions": [
+    "5.9"
+  ],
+  "default_subspecs": "Core",
+  "subspecs": [
+    {
+      "name": "Core",
+      "source_files": "WatermarkKit/Classes/Core/**/*.swift",
+      "frameworks": [
+        "UIKit",
+        "AVFoundation",
+        "CoreMedia",
+        "CoreImage",
+        "CoreGraphics",
+        "ImageIO",
+        "UniformTypeIdentifiers",
+        "Combine"
+      ]
+    },
+    {
+      "name": "Photos",
+      "source_files": "WatermarkKit/Classes/Photos/**/*.swift",
+      "dependencies": {
+        "WatermarkKit/Core": []
+      },
+      "frameworks": "Photos"
+    }
+  ],
+  "swift_version": "5.9"
+}

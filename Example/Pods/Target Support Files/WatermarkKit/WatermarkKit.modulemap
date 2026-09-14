@@ -1,0 +1,6 @@
+framework module WatermarkKit {
+  umbrella header "WatermarkKit-umbrella.h"
+
+  export *
+  module * { export * }
+}
